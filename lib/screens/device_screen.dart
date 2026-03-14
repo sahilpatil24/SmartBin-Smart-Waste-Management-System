@@ -102,6 +102,33 @@ class _DeviceScreenState extends State<DeviceScreen> {
                         ),
                       ),
 
+                    // ── Calibration banner (shown when no baseline yet) ────
+                    if (!dp.isCalibrated && !dp.isRunning)
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        child: Container(
+                          color: Colors.blue.shade800.withOpacity(0.85),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.camera_alt_outlined,
+                                  color: Colors.white, size: 18),
+                              SizedBox(width: 8),
+                              Text(
+                                'Point at EMPTY bin, then press Calibrate',
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
                     // ── Running indicator ─────────────────────────────────
                     if (dp.isRunning)
                       Positioned(
@@ -216,12 +243,34 @@ class _DeviceScreenState extends State<DeviceScreen> {
 
                     const SizedBox(height: 14),
 
-                    // Start / Stop button
+                    // Calibrate + Start/Stop buttons
                     Row(
                       children: [
+                        // Calibrate button (capture empty bin baseline)
+                        if (!dp.isRunning)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: ElevatedButton.icon(
+                              onPressed: dp.isCameraInitialized
+                                  ? dp.calibrate
+                                  : null,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue.shade700,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 14, horizontal: 16),
+                              ),
+                              icon: const Icon(Icons.tune, size: 18),
+                              label: Text(dp.isCalibrated
+                                  ? 'Recalibrate'
+                                  : 'Calibrate'),
+                            ),
+                          ),
+
                         Expanded(
                           child: ElevatedButton.icon(
-                            onPressed: dp.isCameraInitialized
+                            onPressed: (dp.isCameraInitialized &&
+                                dp.isCalibrated)
                                 ? (dp.isRunning
                                 ? dp.stopMonitoring
                                 : dp.startMonitoring)
@@ -239,37 +288,45 @@ class _DeviceScreenState extends State<DeviceScreen> {
                                 : Icons.play_arrow),
                             label: Text(dp.isRunning
                                 ? 'Stop Monitoring'
-                                : 'Start Monitoring'),
+                                : dp.isCalibrated
+                                ? 'Start Monitoring'
+                                : 'Calibrate First'),
                           ),
                         ),
                       ],
                     ),
 
-                    const SizedBox(height: 10),
-
-                    // Manual test slider
-                    Row(
-                      children: [
-                        const Text('Test:',
-                            style: TextStyle(
-                                color: Colors.grey, fontSize: 12)),
-                        Expanded(
-                          child: Slider(
-                            value: dp.fillPercentage.toDouble(),
-                            min: 0,
-                            max: 100,
-                            divisions: 20,
-                            label: '${dp.fillPercentage}%',
-                            activeColor: _fillColor(dp.fillPercentage),
-                            onChanged: (v) =>
-                                dp.setFillManually(v.toInt()),
-                          ),
-                        ),
-                        Text('${dp.fillPercentage}%',
-                            style: const TextStyle(
-                                color: Colors.white70, fontSize: 12)),
-                      ],
-                    ),
+                    // ═══════════════════════════════════════════════════════
+                    // ██ TEST SLIDER — COMMENTED OUT
+                    // ██ Uncomment this block to manually override fill %
+                    // ██ Useful for demos without a real bin
+                    // ═══════════════════════════════════════════════════════
+                    //
+                    // const SizedBox(height: 10),
+                    // Row(
+                    //   children: [
+                    //     const Text('Test:',
+                    //         style: TextStyle(
+                    //             color: Colors.grey, fontSize: 12)),
+                    //     Expanded(
+                    //       child: Slider(
+                    //         value: dp.fillPercentage.toDouble(),
+                    //         min: 0,
+                    //         max: 100,
+                    //         divisions: 20,
+                    //         label: '${dp.fillPercentage}%',
+                    //         activeColor: _fillColor(dp.fillPercentage),
+                    //         onChanged: (v) =>
+                    //             dp.setFillManually(v.toInt()),
+                    //       ),
+                    //     ),
+                    //     Text('${dp.fillPercentage}%',
+                    //         style: const TextStyle(
+                    //             color: Colors.white70, fontSize: 12)),
+                    //   ],
+                    // ),
+                    //
+                    // ═══════════════════════════════════════════════════════
                   ],
                 ),
               ),
@@ -294,7 +351,6 @@ class _ThresholdLinePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Fixed threshold at 10% from top (= 90% fill level marker)
     final double thresholdY = size.height * 0.10;
 
     final linePaint = Paint()
@@ -302,7 +358,6 @@ class _ThresholdLinePainter extends CustomPainter {
       ..strokeWidth = 2.5
       ..style = PaintingStyle.stroke;
 
-    // Draw dashed line
     const dashWidth = 14.0;
     const gapWidth = 8.0;
     double x = 0;
@@ -312,7 +367,6 @@ class _ThresholdLinePainter extends CustomPainter {
       x += dashWidth + gapWidth;
     }
 
-    // Label background
     const label = '90% THRESHOLD';
     final textPainter = TextPainter(
       text: const TextSpan(
@@ -328,7 +382,6 @@ class _ThresholdLinePainter extends CustomPainter {
     textPainter.layout();
     textPainter.paint(canvas, Offset(8, thresholdY - 16));
 
-    // If garbage level crosses threshold, draw fill level line
     if (fillPercentage > 0) {
       final fillY = size.height * (1 - fillPercentage / 100);
       final fillPaint = Paint()
@@ -338,7 +391,6 @@ class _ThresholdLinePainter extends CustomPainter {
             ? Colors.orange
             : Colors.green
         ..strokeWidth = 2.0;
-
       canvas.drawLine(Offset(0, fillY), Offset(size.width, fillY), fillPaint);
     }
   }

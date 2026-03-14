@@ -9,8 +9,25 @@ import 'package:http/http.dart' as http;
 class ApiService {
   // ── Change this to your server IP / domain ───────────────────────────────
   // static const String baseUrl = 'http://192.168.31.13:8080/smartbin';
-  static const String baseUrl = "http://127.0.0.1:8080/smartbin";
-  // ─────────────────────────────────────────────────────────────────────────
+  // static const String baseUrl = "http://127.0.0.1:8080/smartbin";
+  // ───────────────────────────────────────────────────────────────
+  static const String baseUrl = "http://192.168.31.13:8080/smartbin";
+  /*
+  import 'dart:io';
+import 'package:flutter/foundation.dart';
+
+static String get baseUrl {
+  if (kIsWeb) {
+    return "http://192.168.31.13:8080/smartbin";
+  }
+
+  if (Platform.isAndroid) {
+    return "http://10.0.2.2:8080/smartbin";
+  }
+
+  return "http://127.0.0.1:8080/smartbin";
+}
+   */
 
   static const Duration _timeout = Duration(seconds: 10);
 

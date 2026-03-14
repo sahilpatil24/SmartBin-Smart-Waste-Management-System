@@ -43,8 +43,8 @@ class SmartBinApp extends StatelessWidget {
           ),
           cardTheme: CardThemeData(
             elevation: 3,
-            shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12)),
           ),
         ),
         home: const AuthGate(),
