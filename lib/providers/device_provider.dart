@@ -198,9 +198,11 @@ class DeviceProvider extends ChangeNotifier {
           _recentReadings.reduce((a, b) => a + b) ~/ _recentReadings.length;
 
       _fillPercentage = smoothed;
-      _binStatus = smoothed >= 90
+      // ⚠ TESTING THRESHOLDS — alert fires at 50%
+      // TODO: restore to 90/70 for production
+      _binStatus = smoothed >= 70
           ? 'full'
-          : smoothed >= 70
+          : smoothed >= 50
           ? 'almost_full'
           : 'normal';
 
